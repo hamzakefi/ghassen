@@ -16,14 +16,6 @@ exports.loginValidator = () => [
     
 ]
 
-exports.editValidator =() => [
-    
-    
-]
-
-exports.editPasswordValidator =() => [
-    check("password" , " Entrez un mot de passe valide(Min:6)").isLength({min:6})
-]
 
 exports.validation = (req , res , next) =>{
     const errors = validationResult(req)

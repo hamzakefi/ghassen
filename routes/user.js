@@ -1,7 +1,7 @@
 const express = require("express") ;
-const { register, login,  updatePassword, updateInfos, getOneUser } = require("../controllers/user");
+const { register, login,  getOneUser } = require("../controllers/user");
 const isAuth = require("../middleware/isAuth");
-const { validation, registerValidator, loginValidator, editValidator } = require("../middleware/validator");
+const { validation, registerValidator, loginValidator } = require("../middleware/validator");
 
 
 const router = express.Router();
@@ -19,9 +19,7 @@ router.get ("/current" , isAuth , (req,res) =>{
 })
 
 
-router.put('/:_id',editValidator() , validation, updateInfos) 
 
-router.put('/password/:_id',updatePassword) 
 
 router.get('/:_id',getOneUser) 
 

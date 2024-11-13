@@ -16,7 +16,7 @@ const MessagesSchema = new Schema({
     },
 
     phone: {
-        type: String,
+        type: Number,
         required: true,
     }, 
 

@@ -11,10 +11,11 @@ connectDB();
 
 
 app.use('/api/user' , require ('./routes/user'))
+app.use('/api/product',require('./routes/product'))
+app.use('/api/message',require('./routes/messages'))
 
-app.use('/api/admin' , require ('./routes/admin'))
 
-const PORT = process.env.PORT || 7500
+const PORT = process.env.PORT 
 
 
 

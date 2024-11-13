@@ -4,10 +4,10 @@ const {Schema , model } = mongoose ;
 
 const UserSchema = new Schema ({
 
-    firstname : {
-        type: String,
-        required: true
-    },
+    isAdmin: {
+        type: Boolean,
+        default: false,
+      },
     name : {
         type: String,
         required: true
