@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { TextField, Button, Paper } from "@mui/material";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +9,7 @@ const AddProduct = () => {
   // État pour les champs du formulaire
   const [productData, setProductData] = useState({
     id_user: "",
-    date: "",
+    date: "", // La date sera remplie automatiquement
     numserie: "",
     reference: "",
     categorie: "",
@@ -83,7 +83,7 @@ const AddProduct = () => {
       // Réinitialiser le formulaire après succès
       setProductData({
         id_user: "",
-        date: "",
+        date: "", // Réinitialiser la date pour la remplir à nouveau
         numserie: "",
         reference: "",
         categorie: "",
@@ -91,13 +91,23 @@ const AddProduct = () => {
       setFile(null);
 
       // Redirection vers la liste des produits
-      navigate("/products"); // Modifiez le chemin selon votre route
+      navigate("/products");
     } catch (err) {
       // Gestion des erreurs côté serveur
       const serverError = err.response?.data?.msg || "Erreur lors de l'ajout !";
       setError(serverError);
     }
   };
+
+  // Remplir la date au moment où le composant est monté
+  useEffect(() => {
+    const today = new Date();
+    const dateString = today.toISOString().split("T")[0]; // Format "yyyy-mm-dd"
+    setProductData((prevState) => ({
+      ...prevState,
+      date: dateString, // Remplir la date avec la date actuelle
+    }));
+  }, []);
 
   return (
     <Paper style={{ padding: 20, maxWidth: 500, margin: "20px auto" }}>
@@ -120,17 +130,20 @@ const AddProduct = () => {
           margin="normal"
           required
         />
+        
+        {/* Champ Date */}
         <TextField
           label="Date"
-          type="date"
+          type="text" // Utilisation du type texte pour rendre la date non modifiable
           name="date"
           value={productData.date}
           onChange={handleChange}
           fullWidth
           margin="normal"
-          InputLabelProps={{ shrink: true }}
+          InputProps={{ readOnly: true }} // Rendre le champ en lecture seule
           required
         />
+        
         <TextField
           label="Numéro de Série"
           name="numserie"

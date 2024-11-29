@@ -50,9 +50,9 @@ const Listproduct = () => {
                   <TableCell>{product.reference}</TableCell>
                   <TableCell>{product.categorie}</TableCell>
                   <TableCell>
-                    {product.profile_img && (
+                    {product.product_img && (
                       <img
-                        src={product.profile_img}
+                        src={product.product_img}
                         alt="Product"
                         width="100"
                         height="100"

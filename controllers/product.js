@@ -5,33 +5,34 @@ const upload = require("../middleware/multer");
 const express = require("express") ;
 const app = express();
 
-exports.addproduct = async(req,res)=> {
+exports.addproduct = async (req, res) => {
+  const { id_user, reference, date, numserie, categorie } = req.body;
+  
+  try {
+    // Téléchargement de l'image sur Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path);
 
-const {id_user,reference ,date,numserie ,categorie } = req.body
+    // Création du produit avec l'URL de l'image
+    const newProduct = new Product({
+      id_user,
+      date,
+      numserie,
+      reference,
+      categorie,
+      product_img: result.secure_url,  // Stocker l'URL dans le champ correct
+      cloudinary_id: result.public_id,
+    });
 
-const result = await cloudinary.uploader.upload(req.file.path);
+    // Sauvegarde du produit dans la base de données
+    await newProduct.save();
 
-    try {
-       
-        const newProduct = new Product ({
-            id_user,
-            date,
-            numserie,
-             reference,
-             categorie,
-             profile_img: result.secure_url,
-             cloudinary_id: result.public_id,           
-        })
-        
+    // Réponse avec le produit ajouté
+    res.status(200).send({ success: [{ msg: 'Produit ajouté' }], newProduct });
 
-        await newProduct.save()
-        
-        res.status(200).send({ success : [{msg : 'Porduit ajouté'}] , newProduct})
-        
-    } catch (error) {
-        res.status(400).send({msg : 'Produit non ajouté', error})   
-    }
-}
+  } catch (error) {
+    res.status(400).send({ msg: 'Produit non ajouté', error });
+  }
+};
 
 
 
