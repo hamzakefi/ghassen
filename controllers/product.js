@@ -2,10 +2,12 @@ const Product = require("../model/Product")
 const cloudinary = require("../middleware/cloudinary");
 const upload = require("../middleware/multer");
 
+const express = require("express") ;
+const app = express();
 
 exports.addproduct = async(req,res)=> {
 
-const {id_user,reference ,date,numserie ,categorie  } = req.body
+const {id_user,reference ,date,numserie ,categorie } = req.body
 
 const result = await cloudinary.uploader.upload(req.file.path);
 
@@ -34,15 +36,27 @@ const result = await cloudinary.uploader.upload(req.file.path);
 
 
 
-exports.deleteproduct = async (req,res) => {
-    try {
-        const{_id}= req.params;
-        await Product.findOneAndDelete({_id})
-        res.status(200).send({msg : "Product deleted"})
-    } catch (error) {
-        res.status(400).send({msg : "cannot delete this Product", error})      
+exports.deleteproduct = async (req, res) => {
+  const { _id } = req.params;
+
+  try {
+    const product = await Product.findById(_id);
+    if (!product) {
+      return res.status(404).send({ msg: "Produit introuvable" });
     }
-}
+
+    // Supprimer l'image de Cloudinary
+    if (product.cloudinary_id) {
+      await cloudinary.uploader.destroy(product.cloudinary_id);
+    }
+
+    await Product.findByIdAndDelete(_id);
+    res.status(200).send({ msg: "Produit supprimé avec succès" });
+  } catch (error) {
+    res.status(500).send({ msg: "Erreur lors de la suppression du produit", error });
+  }
+};
+
 
 
 

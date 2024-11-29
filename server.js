@@ -1,7 +1,11 @@
 const express = require("express") ;
 const app = express();
 
+const cors = require("cors");
 
+
+// Utilisez CORS pour autoriser les requêtes depuis d'autres origines
+app.use(cors()); 
 require("dotenv").config();
 
 app.use(express.json())
