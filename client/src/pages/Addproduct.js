@@ -5,60 +5,78 @@ import { useNavigate } from "react-router-dom";
 
 const AddProduct = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null); // Stocker l'utilisateur connecté
+  const token = localStorage.getItem("token"); // Récupérer le token
 
-  // État pour les champs du formulaire
+  // Charger les informations de l'utilisateur connecté
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get("http://localhost:7500/api/user/current", {
+          headers: {
+            Authorization: token,
+          },
+        });
+        setUser(response.data); // Enregistrer l'utilisateur
+      } catch (err) {
+        console.error("Impossible de récupérer l'utilisateur :", err);
+      }
+    };
+
+    fetchUser();
+  }, [token]);
+
+  // État pour les données du formulaire
   const [productData, setProductData] = useState({
-    id_user: "",
-    date: "", // La date sera remplie automatiquement
+    id_user: "", // Initialisé après chargement de l'utilisateur
+    date: "", // Rempli automatiquement
     numserie: "",
     reference: "",
     categorie: "",
   });
 
-  // État pour le fichier image
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState(null); // Stocker le fichier image
+  const [message, setMessage] = useState(""); // Message de succès
+  const [error, setError] = useState(""); // Message d'erreur
 
-  // État pour les messages (succès ou erreur)
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  // Remplir la date et l'ID utilisateur quand `user` est disponible
+  useEffect(() => {
+    if (user) {
+      const today = new Date();
+      const dateString = today.toISOString().split("T")[0]; // Format "yyyy-mm-dd"
+      setProductData((prevState) => ({
+        ...prevState,
+        id_user: user._id, // Remplir avec l'ID de l'utilisateur connecté
+        date: dateString, // Date actuelle
+      }));
+    }
+  }, [user]);
 
-  // Fonction pour gérer les changements dans les champs du formulaire
+  // Gestion des champs du formulaire
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProductData({ ...productData, [name]: value });
   };
 
-  // Fonction pour gérer la sélection d'un fichier
+  // Gestion du fichier
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
-  // Fonction pour gérer l'envoi du formulaire
+  // Gestion de la soumission
   const handleAdd = async (e) => {
     e.preventDefault();
 
-    // Réinitialiser les messages
     setMessage("");
     setError("");
 
-    // Vérification des champs obligatoires
-    if (
-      !productData.id_user ||
-      !productData.date ||
-      !productData.numserie ||
-      !productData.reference ||
-      !productData.categorie
-    ) {
-      setError("Tous les champs doivent être remplis !");
+    // Vérifier les champs obligatoires
+    if (!productData.numserie || !productData.reference || !productData.categorie || !file) {
+      setError("Tous les champs obligatoires doivent être remplis !");
       return;
     }
 
-    if (!file) {
-      setError("Une image doit être téléchargée !");
-      return;
-    }
-
-    // Préparer les données pour l'envoi
+    // Préparer les données pour la requête
     const formData = new FormData();
     formData.append("id_user", productData.id_user);
     formData.append("date", productData.date);
@@ -68,46 +86,33 @@ const AddProduct = () => {
     formData.append("image", file);
 
     try {
-      // Envoyer la requête POST
-      const response = await axios.post(
-        "http://localhost:7500/api/product/addProduct",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
+      // Envoyer les données au serveur
+      const response = await axios.post("http://localhost:7500/api/product/addProduct", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: token, // Inclure le token pour l'autorisation
+        },
+      });
 
-      // Message de succès
-      setMessage(response.data.success[0].msg);
+      setMessage(response.data.success[0].msg); // Message de succès
 
-      // Réinitialiser le formulaire après succès
+      // Réinitialiser le formulaire
       setProductData({
-        id_user: "",
-        date: "", // Réinitialiser la date pour la remplir à nouveau
+        id_user: user._id,
+        date: productData.date,
         numserie: "",
         reference: "",
         categorie: "",
       });
       setFile(null);
 
-      // Redirection vers la liste des produits
+      // Rediriger vers la liste des produits
       navigate("/products");
     } catch (err) {
-      // Gestion des erreurs côté serveur
-      const serverError = err.response?.data?.msg || "Erreur lors de l'ajout !";
+      const serverError = err.response?.data?.msg || "Erreur lors de l'ajout du produit.";
       setError(serverError);
     }
   };
-
-  // Remplir la date au moment où le composant est monté
-  useEffect(() => {
-    const today = new Date();
-    const dateString = today.toISOString().split("T")[0]; // Format "yyyy-mm-dd"
-    setProductData((prevState) => ({
-      ...prevState,
-      date: dateString, // Remplir la date avec la date actuelle
-    }));
-  }, []);
 
   return (
     <Paper style={{ padding: 20, maxWidth: 500, margin: "20px auto" }}>
@@ -121,29 +126,27 @@ const AddProduct = () => {
 
       {/* Formulaire */}
       <form onSubmit={handleAdd}>
+        {/* Champ ID utilisateur (lecture seule) */}
         <TextField
           label="ID Utilisateur"
           name="id_user"
           value={productData.id_user}
-          onChange={handleChange}
           fullWidth
           margin="normal"
-          required
+          InputProps={{ readOnly: true }} // Lecture seule
         />
-        
-        {/* Champ Date */}
+
+        {/* Champ Date (lecture seule) */}
         <TextField
           label="Date"
-          type="text" // Utilisation du type texte pour rendre la date non modifiable
           name="date"
           value={productData.date}
-          onChange={handleChange}
           fullWidth
           margin="normal"
-          InputProps={{ readOnly: true }} // Rendre le champ en lecture seule
-          required
+          InputProps={{ readOnly: true }}
         />
-        
+
+        {/* Autres champs */}
         <TextField
           label="Numéro de Série"
           name="numserie"
@@ -172,6 +175,7 @@ const AddProduct = () => {
           required
         />
 
+        {/* Champ pour télécharger une image */}
         <Button
           variant="contained"
           component="label"
@@ -181,6 +185,7 @@ const AddProduct = () => {
           <input type="file" hidden onChange={handleFileChange} />
         </Button>
 
+        {/* Bouton pour soumettre */}
         <Button
           type="submit"
           variant="contained"

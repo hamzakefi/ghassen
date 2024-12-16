@@ -1,11 +1,13 @@
 const User = require("../model/User");
 const jwt = require("jsonwebtoken");
+const bcrypt = require('bcrypt'); 
 
-// *** Register ***
+
 exports.register = async (req, res) => {
   try {
     const { firstname, name, email, password } = req.body;
 
+    // Vérifier si l'utilisateur existe déjà
     const foundUser = await User.findOne({ email });
     if (foundUser) {
       return res
@@ -13,12 +15,20 @@ exports.register = async (req, res) => {
         .send({ errors: [{ msg: "E-mail déjà utilisé... Réessayez" }] });
     }
 
-    const newUser = new User({ ...req.body });
+    // Hacher le mot de passe avant de créer l'utilisateur
+    const salt = await bcrypt.genSalt(10);  // Générer un sel pour le hachage
+    const hashedPassword = await bcrypt.hash(password, salt);  // Hacher le mot de passe
 
-    // save
+    // Créer un nouvel utilisateur avec le mot de passe haché
+    const newUser = new User({
+      ...req.body,
+      password: hashedPassword,  // Utiliser le mot de passe haché
+    });
+
+    // Sauvegarder le nouvel utilisateur
     await newUser.save();
 
-    // token
+    // Générer un token
     const token = jwt.sign(
       {
         id: newUser._id,
@@ -26,6 +36,8 @@ exports.register = async (req, res) => {
       process.env.SCRT_KEY,
       { expiresIn: "168h" }
     );
+
+    // Répondre avec l'utilisateur et le token
     res
       .status(200)
       .send({ success: [{ msg: "Inscription avec succès..." }], user: newUser, token });
@@ -37,11 +49,12 @@ exports.register = async (req, res) => {
 };
 
 // *** Login ***
+// *** Login ***
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // check email existence
+    // Vérifier si l'utilisateur existe avec l'email
     const foundUser = await User.findOne({ email });
     if (!foundUser) {
       return res
@@ -49,7 +62,15 @@ exports.login = async (req, res) => {
         .send({ errors: [{ msg: "Utilisateur ou E-mail non trouvé" }] });
     }
 
-    // token
+    // Vérification du mot de passe avec bcrypt
+    const isMatch = await bcrypt.compare(password, foundUser.password);
+    if (!isMatch) {
+      return res
+        .status(400)
+        .send({ errors: [{ msg: "Mot de passe incorrect" }] });
+    }
+
+    // Générer un token si le mot de passe est correct
     const token = jwt.sign(
       {
         id: foundUser._id,
@@ -58,7 +79,13 @@ exports.login = async (req, res) => {
       process.env.SCRT_KEY,
       { expiresIn: "168h" }
     );
-    res.status(200).send({ success: [{ msg: "Welcome Back" }], user: foundUser, token });
+
+    // Répondre avec le succès, l'utilisateur et le token
+    res.status(200).send({
+      success: [{ msg: "Welcome Back" }],
+      user: foundUser,
+      token,
+    });
   } catch (error) {
     res
       .status(400)

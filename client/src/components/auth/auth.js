@@ -5,34 +5,34 @@ import './auth.css';
 import logo from '../../select.png';
 
 const Auth = () => {
-    const navigate = useNavigate(); // Initialize navigate hook
+    const navigate = useNavigate(); 
 
-    // State pour gérer l'email, le mot de passe et les erreurs
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
     const handleSubmit = async (e) => {
-        e.preventDefault(); // Prevent default form submission
+        e.preventDefault(); 
 
         try {
-            // Envoyer les données au backend
+           
+            setError('');
+
             const response = await axios.post('http://localhost:7500/api/user/login', {
                 email,
                 password,
             });
 
-            // Enregistrement du token dans le localStorage ou autre gestion
+           
             const { token, user } = response.data;
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
+            navigate('/add'); 
 
-            // Redirection après succès
-            navigate('/add'); // Naviguer vers la route "/dd"
+
         } catch (err) {
-            // Gestion des erreurs
             if (err.response && err.response.data) {
-                setError(err.response.data.error || 'Une erreur est survenue.');
+                setError(err.response.data.error || 'Email ou mot de passe incorrect.');
             } else {
                 setError('Impossible de se connecter. Vérifiez votre connexion.');
             }
@@ -50,7 +50,8 @@ const Auth = () => {
                 <div className="login-form-card">
                     <h2>Bienvenue</h2>
                     <form onSubmit={handleSubmit}>
-                        {error && <p className="error-message">{error}</p>} {/* Affichage des erreurs */}
+                        {/* Affichage des erreurs */}
+                        {error && <p className="error-message">{error}</p>}
                         <div className="input-group">
                             <label>Email:</label>
                             <input
