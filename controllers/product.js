@@ -4,7 +4,6 @@ const upload = require("../middleware/multer");
 
 const express = require("express") ;
 const app = express();
-
 exports.addproduct = async (req, res) => {
   const { id_user, reference, date, numserie, categorie } = req.body;
   
@@ -30,7 +29,11 @@ exports.addproduct = async (req, res) => {
     res.status(200).send({ success: [{ msg: 'Produit ajouté' }], newProduct });
 
   } catch (error) {
-    res.status(400).send({ msg: 'Produit non ajouté', error });
+    if (error.code === 11000) {  // Code d'erreur MongoDB pour duplication
+      res.status(400).send({ error: 'Le numéro de série existe déjà.' });
+    } else {
+      res.status(400).send({ msg: 'Produit non ajouté', error });
+    }
   }
 };
 

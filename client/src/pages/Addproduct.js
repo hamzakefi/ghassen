@@ -5,10 +5,10 @@ import { useNavigate } from "react-router-dom";
 
 const AddProduct = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null); // Stocker l'utilisateur connecté
-  const token = localStorage.getItem("token"); // Récupérer le token
+  const [user, setUser] = useState(null); // Store logged-in user
+  const token = localStorage.getItem("token"); // Retrieve token from local storage
 
-  // Charger les informations de l'utilisateur connecté
+  // Load current user information
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -17,66 +17,66 @@ const AddProduct = () => {
             Authorization: token,
           },
         });
-        setUser(response.data); // Enregistrer l'utilisateur
+        setUser(response.data); // Store user
       } catch (err) {
-        console.error("Impossible de récupérer l'utilisateur :", err);
+        console.error("Unable to fetch user:", err);
       }
     };
 
     fetchUser();
   }, [token]);
 
-  // État pour les données du formulaire
+  // State for form data
   const [productData, setProductData] = useState({
-    id_user: "", // Initialisé après chargement de l'utilisateur
-    date: "", // Rempli automatiquement
+    id_user: "", // Will be set when the user is loaded
+    date: "", // Auto-filled
     numserie: "",
     reference: "",
     categorie: "",
   });
 
-  const [file, setFile] = useState(null); // Stocker le fichier image
-  const [message, setMessage] = useState(""); // Message de succès
-  const [error, setError] = useState(""); // Message d'erreur
+  const [file, setFile] = useState(null); // Store uploaded file
+  const [message, setMessage] = useState(""); // Success message
+  const [error, setError] = useState(""); // Error message
 
-  // Remplir la date et l'ID utilisateur quand `user` est disponible
+  // Fill date and user ID when `user` is available
   useEffect(() => {
     if (user) {
       const today = new Date();
       const dateString = today.toISOString().split("T")[0]; // Format "yyyy-mm-dd"
       setProductData((prevState) => ({
         ...prevState,
-        id_user: user._id, // Remplir avec l'ID de l'utilisateur connecté
-        date: dateString, // Date actuelle
+        id_user: user._id, // Set with the current user's ID
+        date: dateString, // Current date
       }));
     }
   }, [user]);
 
-  // Gestion des champs du formulaire
+  // Handle form field changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProductData({ ...productData, [name]: value });
   };
 
-  // Gestion du fichier
+  // Handle file changes
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
-  // Gestion de la soumission
+  // Handle form submission
   const handleAdd = async (e) => {
     e.preventDefault();
 
     setMessage("");
     setError("");
 
-    // Vérifier les champs obligatoires
+    // Validate required fields
     if (!productData.numserie || !productData.reference || !productData.categorie || !file) {
-      setError("Tous les champs obligatoires doivent être remplis !");
+      setError("All required fields must be filled!");
       return;
     }
 
-    // Préparer les données pour la requête
+    // Prepare form data for the request
     const formData = new FormData();
     formData.append("id_user", productData.id_user);
     formData.append("date", productData.date);
@@ -86,17 +86,17 @@ const AddProduct = () => {
     formData.append("image", file);
 
     try {
-      // Envoyer les données au serveur
+      // Send data to the server
       const response = await axios.post("http://localhost:7500/api/product/addProduct", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: token, // Inclure le token pour l'autorisation
+          Authorization: token, // Include token for authorization
         },
       });
 
-      setMessage(response.data.success[0].msg); // Message de succès
+      setMessage(response.data.success[0].msg); // Success message
 
-      // Réinitialiser le formulaire
+      // Reset the form
       setProductData({
         id_user: user._id,
         date: productData.date,
@@ -106,37 +106,54 @@ const AddProduct = () => {
       });
       setFile(null);
 
-      // Rediriger vers la liste des produits
-      navigate("/products");
+      // Redirect to the product list
+      navigate("/productuser");
     } catch (err) {
-      const serverError = err.response?.data?.msg || "Erreur lors de l'ajout du produit.";
-      setError(serverError);
+      if (err.response?.data?.error) {
+        // Single backend error
+        setError(err.response.data.error);
+      } else if (err.response?.data?.errors) {
+        // Multiple backend errors
+        const errors = err.response.data.errors.map((e) => e.msg).join(", ");
+        setError(errors);
+      } else {
+        // Generic error message
+        setError("Error adding product.");
+      }
     }
   };
 
   return (
     <Paper style={{ padding: 20, maxWidth: 500, margin: "20px auto" }}>
-      <h1>Ajouter un Produit</h1>
+      <h1>Add Product</h1>
 
-      {/* Message de succès */}
-      {message && <div style={{ color: "green", marginBottom: 20 }}>{message}</div>}
+      {/* Success Message */}
+      {message && (
+        <div style={{ color: "green", marginBottom: 20 }}>
+          <strong>Success:</strong> {message}
+        </div>
+      )}
 
-      {/* Message d'erreur */}
-      {error && <div style={{ color: "red", marginBottom: 20 }}>{error}</div>}
+      {/* Error Message */}
+      {error && (
+        <div style={{ color: "red", marginBottom: 20 }}>
+          <strong>Error:</strong> {error}
+        </div>
+      )}
 
-      {/* Formulaire */}
+      {/* Form */}
       <form onSubmit={handleAdd}>
-        {/* Champ ID utilisateur (lecture seule) */}
+        {/* User ID (read-only) */}
         <TextField
-          label="ID Utilisateur"
+          label="User ID"
           name="id_user"
           value={productData.id_user}
           fullWidth
           margin="normal"
-          InputProps={{ readOnly: true }} // Lecture seule
+          InputProps={{ readOnly: true }} // Read-only field
         />
 
-        {/* Champ Date (lecture seule) */}
+        {/* Date (read-only) */}
         <TextField
           label="Date"
           name="date"
@@ -146,9 +163,9 @@ const AddProduct = () => {
           InputProps={{ readOnly: true }}
         />
 
-        {/* Autres champs */}
+        {/* Other fields */}
         <TextField
-          label="Numéro de Série"
+          label="Serial Number"
           name="numserie"
           value={productData.numserie}
           onChange={handleChange}
@@ -157,7 +174,7 @@ const AddProduct = () => {
           required
         />
         <TextField
-          label="Référence"
+          label="Reference"
           name="reference"
           value={productData.reference}
           onChange={handleChange}
@@ -166,7 +183,7 @@ const AddProduct = () => {
           required
         />
         <TextField
-          label="Catégorie"
+          label="Category"
           name="categorie"
           value={productData.categorie}
           onChange={handleChange}
@@ -175,24 +192,24 @@ const AddProduct = () => {
           required
         />
 
-        {/* Champ pour télécharger une image */}
+        {/* Upload image */}
         <Button
           variant="contained"
           component="label"
           style={{ marginTop: 20, marginBottom: 10 }}
         >
-          Télécharger une Image
+          Upload Image
           <input type="file" hidden onChange={handleFileChange} />
         </Button>
 
-        {/* Bouton pour soumettre */}
+        {/* Submit button */}
         <Button
           type="submit"
           variant="contained"
           color="primary"
           style={{ marginTop: 20 }}
         >
-          Ajouter le Produit
+          Add Product
         </Button>
       </form>
     </Paper>

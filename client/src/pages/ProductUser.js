@@ -8,6 +8,8 @@ import {
   TableRow,
   TableContainer,
   Paper,
+  CircularProgress,
+  Box,
 } from "@mui/material";
 
 const UserProducts = () => {
@@ -62,7 +64,20 @@ const UserProducts = () => {
   }, [user]);
 
   if (loading) {
-    return <div>Chargement en cours...</div>;
+    return (
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        height="100vh"
+      >
+        <CircularProgress style={{ marginBottom: 20 }} />
+        <div style={{ fontSize: "18px", fontWeight: "bold" }}>
+          Chargement des produits en cours...
+        </div>
+      </Box>
+    );
   }
 
   if (error) {
