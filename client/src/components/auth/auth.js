@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom'; 
 import axios from 'axios'; // Import Axios
 import './auth.css';
 import logo from '../../select.png';
@@ -27,7 +27,8 @@ const Auth = () => {
             const { token, user } = response.data;
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
-            navigate('/add'); 
+            navigate('/add', { replace: true });
+            window.location.reload();
 
 
         } catch (err) {

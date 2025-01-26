@@ -24,7 +24,7 @@ const Listproduct = () => {
   }, []); // [] pour que l'API soit appelée une seule fois
 
   return (
-    <div style={{ padding: 20 }}>
+    <div className='hamza' style={{ padding: 20 }}>
       <h1>Liste des Produits</h1>
 
       <TableContainer component={Paper}>

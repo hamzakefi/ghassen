@@ -25,6 +25,7 @@ const AddProduct = () => {
 
     fetchUser();
   }, [token]);
+  const isAdmin = user?.isAdmin;
 
   // State for form data
   const [productData, setProductData] = useState({
@@ -143,24 +144,30 @@ const AddProduct = () => {
 
       {/* Form */}
       <form onSubmit={handleAdd}>
-        {/* User ID (read-only) */}
+        {/* User ID */}
         <TextField
           label="User ID"
           name="id_user"
           value={productData.id_user}
+          onChange={handleChange}
           fullWidth
           margin="normal"
-          InputProps={{ readOnly: true }} // Read-only field
+          InputProps={{
+            readOnly: !isAdmin, 
+          }}
         />
 
-        {/* Date (read-only) */}
+        {/* Date */}
         <TextField
           label="Date"
           name="date"
           value={productData.date}
+          onChange={handleChange}
           fullWidth
           margin="normal"
-          InputProps={{ readOnly: true }}
+          InputProps={{
+            readOnly: !isAdmin, 
+          }}
         />
 
         {/* Other fields */}

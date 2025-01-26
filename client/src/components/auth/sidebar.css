@@ -1,64 +1,97 @@
-.layout {
-    display: flex;
-  }
-  
-  .sidebar {
-    background: linear-gradient(135deg, #974308, #4c0000);
-    width: 250px; /* Largeur fixe de la sidebar */
-    padding: 20px;
-    height: 92vh; /* Prendre toute la hauteur de l'écran */
-    border-right: 1px solid #ddd;
-    border-radius: 10px;
-    display: flex
-;
+/* Conteneur principal de la navbar */
+.navbar-container {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Barre de navigation */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #974308, #4c0000);
+  padding: 10px 20px;
+  border-radius: 10px;
+  height: 80px; /* Hauteur fixe pour la navbar */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Logo */
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  width: 100px;
+  height: auto;
+  filter: brightness(3.5);
+}
+
+/* Liens de la navbar */
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.navbar-link {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-decoration: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  padding: 10px 15px;
+  border-radius: 10px;
+}
+
+.navbar-link:hover {
+  background-color: #ffffff;
+  color: #4c0000;
+}
+
+/* Bouton de déconnexion */
+.logout-container {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.logout-icon {
+  font-size: 1.5rem;
+  color: #ffffff;
+  margin-right: 10px;
+}
+
+.logout-text {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* Contenu principal */
+.main-content {
+  flex-grow: 1;
+  padding: 20px;
+  background-color: #fff;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+  .navbar-links {
     flex-direction: column;
+    gap: 10px;
   }
-  
-  .logo-container {
-    text-align: center;
-    margin-bottom: 20px;
+
+  .navbar-link {
+    padding: 8px 10px;
   }
-  
-  .logo {
-    width: 145px;
-    height: auto;
-    filter: brightness(3.5);
-  }
-  
-  .sidebar-title {
-    font-size: 1.2rem;
-    font-weight: 600;
-    padding: 10px;
-    cursor: pointer;
-    margin-top: 45px;
-  }
-  
-  .sidebar-title:hover {
-    background-color: #ffffff;
-    border-radius: 10px;
-  }
-  
-  .main-content {
-    flex-grow: 1;
-    padding: 20px;
-    background-color: #fff;
-  }
+
   .logout-container {
-    position: relative;
-    margin-top: auto;
-    width: 100%;
-    display: flex
-;
-    left: 49px;
+    margin-top: 10px;
   }
-  .logout-icon {
-    font-size: 1.5rem;
-    color: #000000; /* Couleur rouge pour l'icône */
-    margin-right: 10px;
-   
+
+  .logo {
+    width: 80px;
   }
-  a:-webkit-any-link 
-    {
-    text-decoration: none;
-    color: black;
-   }
+}
