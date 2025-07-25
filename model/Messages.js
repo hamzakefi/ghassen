@@ -31,8 +31,8 @@ const MessagesSchema = new Schema({
   },
   statut: {
     type: String,
-    enum: ["non lu", "en cours", "traité"], // Enum values for status
-    default: "non lu", // Default status is 'non lu'
+    enum: ["non lu", "en cours", "traité"], 
+    default: "non lu", 
   },
 });
 

@@ -1,6 +1,22 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Container, TextField, Button, Typography, CircularProgress, Box, List, ListItem, ListItemText } from "@mui/material";
+import {
+  Container,
+  TextField,
+  Button,
+  Typography,
+  CircularProgress,
+  Box,
+  Card,
+  CardContent,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid
+} from "@mui/material";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const API_URL = "http://localhost:7500/api/message";
 
@@ -15,40 +31,36 @@ const MessagesApp = () => {
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
-  const [messages, setMessages] = useState([]);  // To store the user's messages
+  const [messages, setMessages] = useState([]);
+  const [open, setOpen] = useState(false); // 🔁 état pour la modale
 
-  const token = localStorage.getItem("token"); // Récupérer le token du localStorage
+  const token = localStorage.getItem("token");
 
-  // Charger les informations de l'utilisateur connecté
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const response = await axios.get("http://localhost:7500/api/user/current", {
           headers: {
-            Authorization: token, // Ajout du token dans les en-têtes
+            Authorization: token,
           },
         });
-        setUser(response.data); // Stocker les données utilisateur
-        setFormData({
-          ...formData,
+        setUser(response.data);
+        setFormData((prev) => ({
+          ...prev,
           name: response.data.name,
           email: response.data.email,
           idUser: response.data._id,
-        });
-        setError(null);
+        }));
       } catch (err) {
-        setError("Impossible de récupérer les informations utilisateur !");
+        toast.error("Impossible de récupérer les informations utilisateur !");
       } finally {
-        setLoading(false); // Terminer le chargement
+        setLoading(false);
       }
     };
 
     fetchUser();
   }, [token]);
 
-  // Charger les messages de l'utilisateur
   useEffect(() => {
     const fetchMessages = async () => {
       if (user) {
@@ -59,9 +71,8 @@ const MessagesApp = () => {
             },
           });
           setMessages(response.data.listMessages);
-          setError(null);
         } catch (err) {
-          setError("Impossible de récupérer les messages.");
+          toast.error("Impossible de récupérer les messages.");
         }
       }
     };
@@ -78,16 +89,23 @@ const MessagesApp = () => {
     e.preventDefault();
     try {
       await axios.post(`${API_URL}/postMessage`, formData);
-      setFormData({ ...formData, phone: "", message: "" }); // Réinitialiser les champs modifiables
-      setError(null);
-      setSuccess(true); // Afficher le message de succès
-      // Rafraîchir la liste des messages après envoi
-      setMessages([...messages, formData]);
+      setFormData({ ...formData, phone: "", message: "" });
+      toast.success("Message envoyé avec succès !");
+      setOpen(false); // 🔁 fermer la modale
+
+      const response = await axios.get(`${API_URL}/getMessagesByUser/${formData.idUser}`, {
+        headers: {
+          Authorization: token,
+        },
+      });
+      setMessages(response.data.listMessages);
     } catch (err) {
-      setError("Erreur lors de l'envoi du message.");
-      setSuccess(false);
+      toast.error("Erreur lors de l'envoi du message.");
     }
   };
+
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
 
   if (loading) {
     return (
@@ -98,79 +116,87 @@ const MessagesApp = () => {
   }
 
   return (
-    <Container maxWidth="sm">
-       <Typography variant="h6" gutterBottom>
+    <Container maxWidth="md">
+      <Typography variant="h4" gutterBottom align="center">
         Vos Messages
       </Typography>
-      
-      <List>
+
+      <Grid container spacing={2}>
         {messages.map((message, index) => (
-          <ListItem key={index}>
-            <ListItemText
-              primary={`Message: ${message.message}`}
-              secondary={`Réponse: ${message.reponse || "Pas encore répondu"} | Statut: ${message.statut}`}
-            />
-          </ListItem>
+          <Grid item xs={12} sm={6} key={index}>
+            <Card elevation={3}>
+              <CardContent>
+                <Typography variant="subtitle1">
+                  📩 <strong>Message :</strong> {message.message}
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  📬 <strong>Réponse :</strong> {message.reponse || "Pas encore répondu"}
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  📌 <strong>Statut :</strong> {message.statut || "non lu"}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
         ))}
-      </List>
-      <Typography variant="h4" gutterBottom>
-        Envoyer un Message
-      </Typography>
-      <form onSubmit={handleSubmit}>
-        <TextField
-          label="Nom"
-          name="name"
-          value={formData.name}
-          fullWidth
-          margin="normal"
-          InputProps={{
-            readOnly: true, // Champ non modifiable
-          }}
-        />
-        <TextField
-          label="Email"
-          name="email"
-          value={formData.email}
-          fullWidth
-          margin="normal"
-          InputProps={{
-            readOnly: true, // Champ non modifiable
-          }}
-        />
-        <TextField
-          label="Téléphone"
-          name="phone"
-          value={formData.phone}
-          onChange={handleInputChange}
-          fullWidth
-          margin="normal"
-        />
-        <TextField
-          label="Message"
-          name="message"
-          value={formData.message}
-          onChange={handleInputChange}
-          fullWidth
-          multiline
-          rows={4}
-          margin="normal"
-        />
-        <Button variant="contained" color="primary" type="submit">
-          Envoyer
+      </Grid>
+
+      <Box textAlign="center" mt={4}>
+        <Button variant="contained" color="primary" onClick={handleOpen}>
+          ✉️ Envoyer un Message
         </Button>
-      </form>
-      {success && (
-        <Typography color="primary" variant="body1">
-          Message envoyé avec succès !
-        </Typography>
-      )}
-      {error && (
-        <Typography color="error" variant="body1">
-          {error}
-        </Typography>
-      )}
-      
-     
+      </Box>
+
+      {/* ✅ Modal pour le formulaire */}
+      <Dialog open={open} onClose={handleClose} fullWidth>
+        <DialogTitle>Envoyer un Message</DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogContent>
+            <TextField
+              label="Nom"
+              name="name"
+              value={formData.name}
+              fullWidth
+              margin="normal"
+              InputProps={{ readOnly: true }}
+            />
+            <TextField
+              label="Email"
+              name="email"
+              value={formData.email}
+              fullWidth
+              margin="normal"
+              InputProps={{ readOnly: true }}
+            />
+            <TextField
+              label="Téléphone"
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="Message"
+              name="message"
+              value={formData.message}
+              onChange={handleInputChange}
+              fullWidth
+              multiline
+              rows={4}
+              margin="normal"
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose}>Annuler</Button>
+            <Button type="submit" variant="contained" color="primary">
+              Envoyer
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      <ToastContainer position="top-center" autoClose={3000} hideProgressBar />
     </Container>
   );
 };

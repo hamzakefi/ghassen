@@ -118,3 +118,25 @@ exports.getMessagesByUser = async (req, res) => {
     }
   };
   
+
+
+  // Supprimer un message
+exports.deleteMessage = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deletedMessage = await Messages.findByIdAndDelete(id);
+
+    if (!deletedMessage) {
+      return res.status(404).send({ msg: "Message non trouvé" });
+    }
+
+    res.status(200).send({
+      msg: "Message supprimé avec succès",
+      deletedMessage,
+    });
+  } catch (error) {
+    console.error("Erreur lors de la suppression du message :", error);
+    res.status(400).send({ msg: "Impossible de supprimer le message", error });
+  }
+};

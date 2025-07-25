@@ -17,6 +17,8 @@ import {
   Button,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { toast, ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 const API_URL = "http://localhost:7500/api/message";
 
@@ -24,7 +26,7 @@ const MessageAdmin = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [responses, setResponses] = useState({}); // Gérer les réponses individuellement
+  const [responses, setResponses] = useState({});
 
   useEffect(() => {
     fetchMessages();
@@ -46,36 +48,40 @@ const MessageAdmin = () => {
     try {
       await axios.delete(`${API_URL}/${id}`);
       setMessages(messages.filter((msg) => msg._id !== id));
+      toast.success("Message supprimé avec succès");
     } catch (err) {
-      setError("Erreur lors de la suppression du message.");
+      toast.error("Erreur lors de la suppression du message.");
     }
   };
 
   const handleStatusUpdate = async (id, statut) => {
     try {
       await axios.patch(`${API_URL}/status/${id}`, { statut });
-      fetchMessages(); // Actualiser la liste des messages
+      fetchMessages();
+      toast.success("Statut mis à jour");
     } catch (err) {
-      setError("Erreur lors de la mise à jour du statut.");
+      toast.error("Erreur lors de la mise à jour du statut.");
     }
   };
 
   const handleReply = async (id) => {
     try {
       await axios.post(`${API_URL}/reply/${id}`, { reponse: responses[id] });
-      setResponses({ ...responses, [id]: "" }); // Réinitialiser la réponse pour ce message
-      fetchMessages(); // Actualiser la liste des messages
+      setResponses({ ...responses, [id]: "" });
+      fetchMessages();
+      toast.success("Réponse envoyée avec succès");
     } catch (err) {
-      setError("Erreur lors de l'ajout de la réponse.");
+      toast.error("Erreur lors de l'envoi de la réponse.");
     }
   };
 
   const handleResponseChange = (id, value) => {
-    setResponses({ ...responses, [id]: value }); // Mettre à jour la réponse pour un message spécifique
+    setResponses({ ...responses, [id]: value });
   };
 
   return (
     <Container maxWidth="md" style={{ marginTop: "2rem" }}>
+      <ToastContainer />
       <Typography variant="h4" gutterBottom>
         Liste des Messages
       </Typography>
@@ -113,6 +119,8 @@ const MessageAdmin = () => {
                       SelectProps={{ native: true }}
                       value={msg.statut || "non traité"}
                       onChange={(e) => handleStatusUpdate(msg._id, e.target.value)}
+                      fullWidth
+                      size="small"
                     >
                       <option value="non traité">Non traité</option>
                       <option value="en cours">En cours</option>
@@ -120,19 +128,24 @@ const MessageAdmin = () => {
                     </TextField>
                   </TableCell>
                   <TableCell>
-                    <TextField
-                      value={responses[msg._id] || ""}
-                      onChange={(e) => handleResponseChange(msg._id, e.target.value)}
-                      placeholder="Ajouter une réponse"
-                    />
-                    <Button
-                      onClick={() => handleReply(msg._id)}
-                      variant="contained"
-                      color="primary"
-                      size="small"
-                    >
-                      Envoyer
-                    </Button>
+                    <Box display="flex" flexDirection="column" gap={1}>
+                      <TextField
+                        value={responses[msg._id] || ""}
+                        onChange={(e) => handleResponseChange(msg._id, e.target.value)}
+                        placeholder="Ajouter une réponse"
+                        size="small"
+                        fullWidth
+                      />
+                      <Button
+                        onClick={() => handleReply(msg._id)}
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        fullWidth
+                      >
+                        Envoyer
+                      </Button>
+                    </Box>
                   </TableCell>
                   <TableCell>
                     <IconButton

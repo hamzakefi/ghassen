@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { TextField, Button, Paper } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify"; // Import Toastify
+import "react-toastify/dist/ReactToastify.css";
 
 const AddProduct = () => {
   const navigate = useNavigate();
@@ -13,42 +15,40 @@ const AddProduct = () => {
     const fetchUser = async () => {
       try {
         const response = await axios.get("http://localhost:7500/api/user/current", {
-          headers: {
-            Authorization: token,
-          },
+          headers: { Authorization: token },
         });
         setUser(response.data); // Store user
       } catch (err) {
-        console.error("Unable to fetch user:", err);
+        toast.error("Impossible de récupérer l'utilisateur.");
       }
     };
 
     fetchUser();
   }, [token]);
+
   const isAdmin = user?.isAdmin;
 
   // State for form data
   const [productData, setProductData] = useState({
-    id_user: "", // Will be set when the user is loaded
-    date: "", // Auto-filled
+    id_user: "",
+    date: "",
     numserie: "",
     reference: "",
     categorie: "",
   });
 
   const [file, setFile] = useState(null); // Store uploaded file
-  const [message, setMessage] = useState(""); // Success message
-  const [error, setError] = useState(""); // Error message
+  const [preview, setPreview] = useState(null); // For image preview
 
   // Fill date and user ID when `user` is available
   useEffect(() => {
     if (user) {
       const today = new Date();
-      const dateString = today.toISOString().split("T")[0]; // Format "yyyy-mm-dd"
+      const dateString = today.toISOString().split("T")[0];
       setProductData((prevState) => ({
         ...prevState,
-        id_user: user._id, // Set with the current user's ID
-        date: dateString, // Current date
+        id_user: user._id,
+        date: dateString,
       }));
     }
   }, [user]);
@@ -59,25 +59,35 @@ const AddProduct = () => {
     setProductData({ ...productData, [name]: value });
   };
 
-  // Handle file changes
+  // Handle file changes and preview
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const selectedFile = e.target.files[0];
+    setFile(selectedFile);
+
+    if (selectedFile) {
+      const objectUrl = URL.createObjectURL(selectedFile);
+      setPreview(objectUrl);
+    } else {
+      setPreview(null);
+    }
   };
+
+  // Cleanup preview URL when component unmounts or file changes
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
 
   // Handle form submission
   const handleAdd = async (e) => {
     e.preventDefault();
 
-    setMessage("");
-    setError("");
-
-    // Validate required fields
     if (!productData.numserie || !productData.reference || !productData.categorie || !file) {
-      setError("All required fields must be filled!");
+      toast.error("Tous les champs obligatoires doivent être remplis !");
       return;
     }
 
-    // Prepare form data for the request
     const formData = new FormData();
     formData.append("id_user", productData.id_user);
     formData.append("date", productData.date);
@@ -87,17 +97,16 @@ const AddProduct = () => {
     formData.append("image", file);
 
     try {
-      // Send data to the server
       const response = await axios.post("http://localhost:7500/api/product/addProduct", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: token, // Include token for authorization
+          Authorization: token,
         },
       });
 
-      setMessage(response.data.success[0].msg); // Success message
+      toast.success(response.data.success[0].msg);
 
-      // Reset the form
+      // Reset form
       setProductData({
         id_user: user._id,
         date: productData.date,
@@ -106,58 +115,37 @@ const AddProduct = () => {
         categorie: "",
       });
       setFile(null);
+      setPreview(null);
 
-      // Redirect to the product list
+      // Redirect to product list
       navigate("/productuser");
     } catch (err) {
       if (err.response?.data?.error) {
-        // Single backend error
-        setError(err.response.data.error);
+        toast.error(err.response.data.error);
       } else if (err.response?.data?.errors) {
-        // Multiple backend errors
         const errors = err.response.data.errors.map((e) => e.msg).join(", ");
-        setError(errors);
+        toast.error(errors);
       } else {
-        // Generic error message
-        setError("Error adding product.");
+        toast.error("Erreur lors de l'ajout du produit.");
       }
     }
   };
 
   return (
     <Paper style={{ padding: 20, maxWidth: 500, margin: "20px auto" }}>
-      <h1>Add Product</h1>
+      <h1>Ajouter un produit</h1>
 
-      {/* Success Message */}
-      {message && (
-        <div style={{ color: "green", marginBottom: 20 }}>
-          <strong>Success:</strong> {message}
-        </div>
-      )}
-
-      {/* Error Message */}
-      {error && (
-        <div style={{ color: "red", marginBottom: 20 }}>
-          <strong>Error:</strong> {error}
-        </div>
-      )}
-
-      {/* Form */}
       <form onSubmit={handleAdd}>
-        {/* User ID */}
         <TextField
-          label="User ID"
+          label="ID Utilisateur"
           name="id_user"
           value={productData.id_user}
           onChange={handleChange}
           fullWidth
           margin="normal"
-          InputProps={{
-            readOnly: !isAdmin, 
-          }}
+          InputProps={{ readOnly: !isAdmin }}
         />
 
-        {/* Date */}
         <TextField
           label="Date"
           name="date"
@@ -165,14 +153,11 @@ const AddProduct = () => {
           onChange={handleChange}
           fullWidth
           margin="normal"
-          InputProps={{
-            readOnly: !isAdmin, 
-          }}
+          InputProps={{ readOnly: !isAdmin }}
         />
 
-        {/* Other fields */}
         <TextField
-          label="Serial Number"
+          label="Numéro de série"
           name="numserie"
           value={productData.numserie}
           onChange={handleChange}
@@ -180,8 +165,9 @@ const AddProduct = () => {
           margin="normal"
           required
         />
+
         <TextField
-          label="Reference"
+          label="Référence"
           name="reference"
           value={productData.reference}
           onChange={handleChange}
@@ -189,8 +175,9 @@ const AddProduct = () => {
           margin="normal"
           required
         />
+
         <TextField
-          label="Category"
+          label="Catégorie"
           name="categorie"
           value={productData.categorie}
           onChange={handleChange}
@@ -199,26 +186,28 @@ const AddProduct = () => {
           required
         />
 
-        {/* Upload image */}
-        <Button
-          variant="contained"
-          component="label"
-          style={{ marginTop: 20, marginBottom: 10 }}
-        >
+        {/* Aperçu de l'image avant les boutons */}
+        {preview && (
+          <div style={{ marginBottom: 20, textAlign: "center" }}>
+            <img
+              src={preview}
+              alt="Aperçu"
+              style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 8, objectFit: "contain" }}
+            />
+          </div>
+        )}
+
+        <Button variant="contained" component="label" style={{ marginBottom: 10 }}>
           Upload Image
-          <input type="file" hidden onChange={handleFileChange} />
+          <input type="file" hidden accept="image/*" onChange={handleFileChange} />
         </Button>
 
-        {/* Submit button */}
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          style={{ marginTop: 20 }}
-        >
-          Add Product
+        <Button type="submit" variant="contained" color="primary" style={{ marginTop: 20 }}>
+          Ajouter le produit
         </Button>
       </form>
+
+      <ToastContainer position="top-center" autoClose={3000} hideProgressBar />
     </Paper>
   );
 };
